@@ -26,16 +26,32 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-      - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v2
+      - name: setup go
+        uses: actions/setup-go@v5
+        id: setup-go
         with:
-          github_token: ${{ github.token }}
-          golangci_lint_flags: "--config ${{ github.workspace }}/.golangci.yml"
-          go_version_file: "go.mod"
-          reporter: github-pr-review
-          level: warning
-          filter_mode: nofilter
-          workdir: ./mod1
+          go-version-file: "./mod1/go.mod"
+      - name: download go mod
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: |
+          go mod download
+      - name: run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./mod1
+          args: --config "${{ github.workspace }}/.golangci.yml"
+          install-mode: binary
+          # - name: golangci-lint
+          #   uses: reviewdog/action-golangci-lint@v2
+          #   with:
+          #     github_token: ${{ github.token }}
+          #     golangci_lint_flags: "--config ${{ github.workspace }}/.golangci.yml"
+          #     go_version_file: "go.mod"
+          #     reporter: github-pr-review
+          #     level: warning
+          #     filter_mode: nofilter
+          #     workdir: ./mod1
 
   govulncheck:
     name: run govulncheck
