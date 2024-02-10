@@ -1,0 +1,78 @@
+name: test mod2
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+    paths:
+      - "mod2/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+    working-directory: "./mod2"
+
+jobs:
+  golangci-lint-with-reviewdog:
+    name: run golangci-lint
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ github.token }}
+          golangci_lint_flags: "--config ${{ github.workspace }}/.golangci.yml"
+          go_version_file: "go.mod"
+          reporter: github-pr-review
+          level: warning
+          filter_mode: nofilter
+
+  govulncheck:
+    name: run govulncheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup go
+        uses: actions/setup-go@v4
+        id: setup-go
+        with:
+          go-version-file: "go.mod"
+      - name: download go mod
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: |
+          go mod download
+      - name: run govulncheck
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  go-test:
+    name: run go test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup go
+        uses: actions/setup-go@v4
+        id: setup-go
+        with:
+          go-version-file: "go.mod"
+      - name: download go mod
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: |
+          go mod download
+      - name: run go test
+        run: |
+          go test -v ./...
