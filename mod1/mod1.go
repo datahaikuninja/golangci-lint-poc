@@ -1,6 +1,6 @@
 package mod1
 
 func Typo() string {
-	Mis_spell := "mis_spell"
-	return Mis_spell
+	misSpell := "mis_spell"
+	return misSpell
 }
