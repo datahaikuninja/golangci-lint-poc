@@ -1,4 +1,4 @@
-// comment
+// comments
 package main
 
 import (
