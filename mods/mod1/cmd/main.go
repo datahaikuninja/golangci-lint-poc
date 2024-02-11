@@ -1,3 +1,4 @@
+// comments for main.go
 package main
 
 import (

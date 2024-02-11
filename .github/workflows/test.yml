@@ -1,0 +1,157 @@
+name: test golang modules
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+jobs:
+  get_changed_dirs:
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.changed-dirs.outputs.all_changed_files }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run changed-files with dir_names
+        id: changed-dirs
+        uses: tj-actions/changed-files@v42
+        with:
+          dir_names: "true"
+          json: "true"
+          write_output_files: "true" # for debug steps in same job
+          escape_json: "false"
+          files: |
+            mods/mod1/*
+            mods/mod2/*
+            # files_ignore: |
+            #   **/cmd/*
+
+      # debug
+      - name: List all changed files
+        run: |
+          for dir in ${{ steps.changed-dirs.outputs.all_changed_files }}; do
+            echo "$dir was changed"
+          done
+
+      # debug
+      # write_output_files: true だと outpusのファイル名でファイルを吐いてくれる
+      - name: Verify the contents of the .github/outputs/　json files
+        run: |
+          for file in $(ls .github/outputs -1); do
+            echo "cat $file"
+            echo "\`\`\`json"
+            cat .github/outputs/$file;
+            echo ""
+            echo "\`\`\`"
+          done
+
+  golangci-lint:
+    needs: get_changed_dirs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.get_changed_dirs.outputs.dirs) }}
+    name: run golangci-lint
+    permissions:
+      pull-requests: write
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ matrix.target }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup go
+        uses: actions/setup-go@v5
+        id: setup-go
+        with:
+          go-version-file: "${{ matrix.target }}/go.mod"
+      - name: download go mod
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: |
+          go mod download
+      - name: run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          working-directory: ${{ matrix.target }}
+          args: --config "${{ github.workspace }}/.golangci.yml"
+          install-mode: binary
+          # - name: golangci-lint
+          #   uses: reviewdog/action-golangci-lint@v2
+          #   with:
+          #     github_token: ${{ github.token }}
+          #     golangci_lint_flags: "--config ${{ github.workspace }}/.golangci.yml"
+          #     go_version_file: "go.mod"
+          #     reporter: github-pr-review
+          #     level: warning
+          #     filter_mode: nofilter
+          #     workdir: ./mod1
+
+  govulncheck:
+    needs: get_changed_dirs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.get_changed_dirs.outputs.dirs) }}
+    name: run govulncheck
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ matrix.target }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup go
+        uses: actions/setup-go@v5
+        id: setup-go
+        with:
+          go-version-file: "${{ matrix.target }}/go.mod"
+      - name: download go mod
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: |
+          go mod download
+      - name: run govulncheck
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  go-test:
+    needs: get_changed_dirs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.get_changed_dirs.outputs.dirs) }}
+    name: run go test
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ matrix.target }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup go
+        uses: actions/setup-go@v5
+        id: setup-go
+        with:
+          go-version-file: "${{ matrix.target }}/go.mod"
+      - name: download go mod
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: |
+          go mod download
+      - name: run go test
+        run: |
+          go test -v ./...
