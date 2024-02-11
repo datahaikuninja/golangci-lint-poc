@@ -8,6 +8,6 @@ import (
 )
 
 func main() {
-	s_s := mod1.Typo()
-	fmt.Printf("This is a misspelled word: %s\n", s_s)
+	s := mod1.Typo()
+	fmt.Printf("This is a misspelled word: %s\n", s)
 }
