@@ -23,8 +23,8 @@ jobs:
           write_output_files: "true" # for debug
           escape_json: "false"
           files: |
-            mods/mod1/
-            mods/mod2/
+            mods/mod1/**
+            mods/mod2/**
 
       # debug
       - name: List all changed files
