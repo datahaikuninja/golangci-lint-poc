@@ -1,0 +1,57 @@
+name: matrix example
+
+on:
+  push
+ 
+jobs:
+  get_dirs:
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.changed-dirs.outputs.all_changed_files }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run changed-files with dir_names
+        id: changed-dirs
+        uses: tj-actions/changed-files@v42
+        with:
+          dir_names: "true"
+          json: "true"
+          write_output_files: "true" # for debug
+          escape_json: "false"
+          files: |
+            mod1/**
+            mod2/**
+
+      # debug
+      - name: List all changed files
+        run: |
+          for dir in ${{ steps.changed-dirs.outputs.all_changed_files }}; do
+            echo "$dir was changed"
+          done
+
+      # debug
+      # write_output_files: true だと outpusのファイル名でファイルを吐いてくれる
+      - name: Verify the contents of the .github/outputs/　json files
+        run: |
+          for file in $(ls .github/outputs -1); do
+            echo "cat $file"
+            echo "\`\`\`json"
+            cat .github/outputs/$file;
+            echo ""
+            echo "\`\`\`"
+          done
+
+  run_tasks:
+    needs: get_dirs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.get_dirs.outputs.dirs) }}
+    steps:
+      - name: Run task
+        run: |
+          echo "Running task for directory: ${{ matrix.target }}"
