@@ -1,5 +1,5 @@
 // comments for main.go
-// comments for main.go
+// comments
 package main
 
 import (

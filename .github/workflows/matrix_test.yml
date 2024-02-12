@@ -19,6 +19,7 @@ jobs:
         uses: tj-actions/changed-files@v42
         with:
           dir_names: "true"
+          dir_names_max_depth: "2"
           json: "true"
           write_output_files: "true" # for debug
           escape_json: "false"
@@ -31,7 +32,7 @@ jobs:
       # debug
       - name: echo all_changed_files
         run: |
-          echo "${{ steps.changed-dirs.outputs.all_changed_files }}" | jq .
+          echo "${{ steps.changed-dirs.outputs.all_changed_files }}"
 
       # debug
       - name: List all changed files
