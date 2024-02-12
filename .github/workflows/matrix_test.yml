@@ -23,15 +23,15 @@ jobs:
           write_output_files: "true" # for debug
           escape_json: "false"
           files: |
-            mods/mod1/*
-            mods/mod2/*
+            mods/mod1/**
+            mods/mod2/**
             # files_ignore: |
             #   **/cmd/*
 
       # debug
       - name: echo all_changed_files
         run: |
-          echo ${{ steps.changed-files.outputs.all_changed_files }} | jq .
+          echo "${{ steps.changed-dirs.outputs.all_changed_files }}" | jq .
 
       # debug
       - name: List all changed files
