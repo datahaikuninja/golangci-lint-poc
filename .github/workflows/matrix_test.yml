@@ -14,6 +14,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: diff
+        run: |
+          git diff --name-only
+
       - name: Run changed-files with dir_names
         id: changed-dirs
         uses: tj-actions/changed-files@v42
