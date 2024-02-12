@@ -9,15 +9,14 @@ on:
       - synchronize
   workflow_dispatch:
 
-defaults:
-  run:
-    shell: bash -euo pipefail {0}
-
 jobs:
   get_changed_dirs:
     runs-on: ubuntu-latest
     outputs:
       dirs: ${{ steps.changed-dirs.outputs.all_changed_files }}
+    defaults:
+      run:
+        shell: bash -euo pipefail {0}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -29,17 +28,16 @@ jobs:
         uses: tj-actions/changed-files@v42
         with:
           dir_names: "true"
+          dir_names_max_depth: "2"
           json: "true"
-          write_output_files: "true" # for debug steps in same job
+          # write_output_files: "true" # for debug steps in same job
           escape_json: "false"
           files: |
-            mods/mod1/*
-            mods/mod2/*
-            # files_ignore: |
-            #   **/cmd/*
+            mods/mod1/**
+            mods/mod2/**
 
       # debug
-      - name: List all changed files
+      - name: List all changed dirs
         run: |
           for dir in ${{ steps.changed-dirs.outputs.all_changed_files }}; do
             echo "$dir was changed"
@@ -47,15 +45,15 @@ jobs:
 
       # debug
       # write_output_files: true だと outpusのファイル名でファイルを吐いてくれる
-      - name: Verify the contents of the .github/outputs/　json files
-        run: |
-          for file in $(ls .github/outputs -1); do
-            echo "cat $file"
-            echo "\`\`\`json"
-            cat .github/outputs/$file;
-            echo ""
-            echo "\`\`\`"
-          done
+      # - name: Verify the contents of the .github/outputs/　json files
+      #   run: |
+      #     for file in $(ls .github/outputs -1); do
+      #       echo "cat $file"
+      #       echo "\`\`\`json"
+      #       cat .github/outputs/$file;
+      #       echo ""
+      #       echo "\`\`\`"
+      #     done
 
   golangci-lint:
     needs: get_changed_dirs
@@ -70,6 +68,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ matrix.target }}
+        shell: bash -euo pipefail {0}
+
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -112,6 +112,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ matrix.target }}
+        shell: bash -euo pipefail {0}
+
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -140,6 +142,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ matrix.target }}
+        shell: bash -euo pipefail {0}
+
     steps:
       - name: checkout
         uses: actions/checkout@v4
