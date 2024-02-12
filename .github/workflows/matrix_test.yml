@@ -14,9 +14,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: diff
+      - name: Run changed-files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            mods/mod1/**
+            mods/mod2/**
+
+      # debug
+      - name: echo all changed files
         run: |
-          git diff --name-only
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
 
       - name: Run changed-files with dir_names
         id: changed-dirs
@@ -30,16 +39,14 @@ jobs:
           files: |
             mods/mod1/**
             mods/mod2/**
-            # files_ignore: |
-            #   **/cmd/*
 
       # debug
-      - name: echo all_changed_files
+      - name: echo all_changed dirs
         run: |
           echo "${{ steps.changed-dirs.outputs.all_changed_files }}"
 
       # debug
-      - name: List all changed files
+      - name: List all changed dirs
         run: |
           for dir in ${{ steps.changed-dirs.outputs.all_changed_files }}; do
             echo "$dir was changed"
